@@ -1,3 +1,13 @@
+<script setup>
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  window.Echo.channel('test').listen('TestEvent', (e) => {
+    console.log('Evento recibido:', e)
+  })
+})
+</script>
+
 <template>
-  <h1 class="text-2xl font-bold text-blue-600">Vue funcionando en Laravel 12 🎉</h1>
+  <h1>Reverb funcionando 🎉</h1>
 </template>
