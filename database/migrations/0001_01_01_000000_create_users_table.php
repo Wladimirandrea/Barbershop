@@ -12,14 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
+            $table->id();  // ← Esto crea la columna 'id' BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+
+            // Campos extras para tu barbershop
+            $table->string('phone')->nullable()->unique();
+            $table->string('avatar')->nullable();
+            $table->date('birth_date')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('last_login_at')->nullable();
+
             $table->timestamps();
+        
         });
+
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
