@@ -3,35 +3,59 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'   // ← CORREGIDO con alias @
 
 // Lazy loading de vistas
-const RegisterView   = () => import('@/views/auth/RegisterView.vue')
-const LoginView      = () => import('@/views/auth/LoginView.vue')
-const DashboardView  = () => import('@/views/DashboardView.vue')
-const HomeView       = () => import('@/views/HomeView.vue')
+const RegisterView = () => import('@/views/auth/RegisterView.vue')
+const LoginView = () => import('@/views/auth/LoginView.vue')
+const DashboardView = () => import('@/views/DashboardView.vue')
+const HomeView = () => import('@/views/HomeView.vue')
 
 const routes = [
-  { path: '/',           name: 'home',      component: HomeView },
-  { 
-    path: '/register', 
-    name: 'register', 
+  { path: '/', name: 'home', component: HomeView },
+  {
+    path: '/register',
+    name: 'register',
     component: RegisterView,
     meta: { guestOnly: true }
   },
-  { 
-    path: '/login', 
-    name: 'login', 
+  {
+    path: '/login',
+    name: 'login',
     component: LoginView,
     meta: { guestOnly: true }
   },
-  { 
-    path: '/dashboard', 
-    name: 'dashboard', 
+  {
+    path: '/dashboard',
+    name: 'dashboard',
     component: DashboardView,
     meta: { requiresAuth: true }
   },
+
+
+  {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    component: () => import('@/views/admin/DashboardAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/barber/dashboard',
+    name: 'barber-dashboard',
+    component: () => import('@/views/barber/DashboardBarber.vue'),
+    meta: { requiresAuth: true, roles: ['barber'] }
+  },
+  {
+    path: '/client/dashboard',
+    name: 'client-dashboard',
+    component: () => import('@/views/client/DashboardClient.vue'),
+    meta: { requiresAuth: true, roles: ['client'] }
+  },
+
+
+
+
   // Ruta 404 (opcional pero útil)
-  { 
-    path: '/:pathMatch(.*)*', 
-    name: 'not-found', 
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
     component: { template: '<div class="text-center mt-20"><h1>404 - Página no encontrada</h1></div>' }
   }
 ]
@@ -43,19 +67,32 @@ const router = createRouter({
 
 // Middleware global
 router.beforeEach((to, from, next) => {
-  const auth = useAuthStore()
+  const auth = useAuthStore();
 
-  // Si la ruta requiere auth y no estás logueado → redirige a login
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return next({ name: 'login' })
+    return next('/login');
   }
 
-  // Si la ruta es solo para invitados y ya estás logueado → redirige a dashboard
-  if (to.meta.guestOnly && auth.isAuthenticated) {
-    return next({ name: 'dashboard' })
+  // Redirección automática si va a una ruta genérica /dashboard
+  if (auth.isAuthenticated && to.path === '/dashboard') {
+    const role = auth.user?.roles?.[0]?.name;
+
+    if (role === 'admin') return next('/admin/dashboard');
+    if (role === 'barber') return next('/barber/dashboard');
+    if (role === 'client') return next('/client/dashboard');
   }
 
-  next()
-})
+  // Protección adicional por rol específico
+  if (to.meta.roles && auth.isAuthenticated) {
+    const userRoles = auth.user?.roles?.map(r => r.name) || [];
+    const hasRole = to.meta.roles.some(role => userRoles.includes(role));
+
+    if (!hasRole) {
+      return next('/'); // o mostrar mensaje de acceso denegado
+    }
+  }
+
+  next();
+});
 
 export default router
