@@ -22,7 +22,7 @@ return new class extends Migration
 
             // Campos extras para tu barbershop
             $table->string('phone')->nullable()->unique();
-            $table->string('avatar')->nullable();
+            $table->string('avatar')->default('avatars/default.png');
             $table->date('birth_date')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_login_at')->nullable();
