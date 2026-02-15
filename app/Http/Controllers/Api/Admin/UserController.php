@@ -70,24 +70,24 @@ class UserController extends Controller
             unset($data['password']);
         }
 
-        // Subir nuevo avatar si se envió (reemplaza el anterior)
-        // En update()
+        // Solo procesar avatar si se subió uno nuevo
         if ($request->hasFile('avatar')) {
-            // Solo si sube nueva foto → eliminar la anterior y guardar nueva
-            if ($user->avatar) {
+            // Eliminar el avatar anterior SOLO si existe y se subió uno nuevo
+            if ($user->avatar && $user->avatar !== 'avatars/default.png') {
                 Storage::disk('public')->delete($user->avatar);
             }
+
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
-        // Si NO sube foto → $data['avatar'] no se establece → el valor actual se mantiene
+        // ← Si NO se subió nada nuevo, NO tocamos $data['avatar'] → se mantiene el valor actual (o default)
 
         $user->update($data);
 
         // Actualizar rol si se envió
         if ($request->has('role')) {
             $role = Role::where('name', $request->role)->first();
-            $user->roles()->sync($role->id); // reemplaza roles anteriores
+            $user->roles()->sync($role->id);
         }
 
         return response()->json($user->load('roles'));

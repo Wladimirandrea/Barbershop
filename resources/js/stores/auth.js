@@ -3,9 +3,6 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', {
-  // Opcional: persistir en localStorage automáticamente
-  // persist: true,  // requiere pinia-plugin-persistedstate
-
   state: () => ({
     user: null,
     token: null,
@@ -17,18 +14,16 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token,
     userName: (state) => state.user?.name || 'Invitado',
     userEmail: (state) => state.user?.email || '',
-    userRoles: (state) => state.user?.roles || [], // si devuelves roles en la respuesta
+    userRoles: (state) => state.user?.roles || [],
   },
 
   actions: {
-    // Inicializar autenticación al cargar la app
     initAuth() {
       const token = localStorage.getItem('token')
       const userStr = localStorage.getItem('user')
 
       if (token) {
         this.token = token
-        // Configurar header global de axios
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       }
 
@@ -37,29 +32,26 @@ export const useAuthStore = defineStore('auth', {
           this.user = JSON.parse(userStr)
         } catch (e) {
           console.error('Error al parsear usuario de localStorage:', e)
-          this.logout() // limpiar si está corrupto
+          this.logout()
         }
       }
     },
 
-    // Registro
     async register(userData) {
       this.isLoading = true
       this.error = null
 
       try {
-        const response = await axios.post('/api/register', userData)
+        const response = await axios.post('/register', userData)  // ← CORREGIDO (sin /api)
 
         const { token, user } = response.data
 
         this.token = token
         this.user = user
 
-        // Guardar en localStorage
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
 
-        // Configurar header para todas las futuras peticiones
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
         return response.data
@@ -72,13 +64,12 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // Login
     async login(credentials) {
       this.isLoading = true
       this.error = null
 
       try {
-        const response = await axios.post('/api/login', credentials)
+        const response = await axios.post('/login', credentials)  // ← CORREGIDO (sin /api)
 
         const { token, user } = response.data
 
@@ -100,7 +91,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // Cerrar sesión
     logout() {
       this.token = null
       this.user = null
@@ -110,14 +100,11 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('user')
 
       delete axios.defaults.headers.common['Authorization']
-
-     
     },
 
-    // Actualizar datos del usuario (ej: después de editar perfil)
     async updateUser() {
       try {
-        const response = await axios.get('/api/profile') // o la ruta que tengas
+        const response = await axios.get('/profile')  // ← sin /api (baseURL lo agrega)
         this.user = response.data.user
         localStorage.setItem('user', JSON.stringify(this.user))
       } catch (err) {
