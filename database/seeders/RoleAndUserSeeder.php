@@ -27,19 +27,19 @@ class RoleAndUserSeeder extends Seeder
             [
                 'name'     => 'Admin Principal',
                 'email'    => 'admin@barbershop.com',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make('123456789'),
                 'phone'    => '555-0001',
             ],
             [
                 'name'     => 'Barbero Juan',
                 'email'    => 'barber@barbershop.com',
-                'password' => Hash::make('barber123'),
+                'password' => Hash::make('123456789'),
                 'phone'    => '555-0002',
             ],
             [
                 'name'     => 'Cliente María',
                 'email'    => 'client@barbershop.com',
-                'password' => Hash::make('client123'),
+                'password' => Hash::make('123456789'),
                 'phone'    => '555-0003',
             ],
         ];
