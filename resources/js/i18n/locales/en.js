@@ -40,7 +40,12 @@ export default {
       admin: 'Admin',
       barber: 'Barber',
       client: 'Client',
-    }
+    },
+    password_hint: '(leave empty to keep current)',
+    confirm_delete: 'Are you sure you want to delete this user?',
+    error_load: 'Error loading users',
+    error_save: 'Error saving user',
+    error_delete: 'Error deleting user',
   },
   notifications: {
     new_user: '🧑 New user: {name} ({email})',

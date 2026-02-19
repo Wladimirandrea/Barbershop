@@ -40,7 +40,12 @@ export default {
       admin: 'Admin',
       barber: 'Barbero',
       client: 'Cliente',
-    }
+    },
+    password_hint: '(dejar vacío para no cambiar)',
+    confirm_delete: '¿Seguro que quieres eliminar este usuario?',
+    error_load: 'Error al cargar usuarios',
+    error_save: 'Error al guardar',
+    error_delete: 'Error al eliminar',
   },
   notifications: {
     new_user: '🧑 Nuevo usuario: {name} ({email})',

@@ -19,7 +19,7 @@ const changeLanguage = (lang) => {
   languageDropdownOpen.value = false
 }
 
-const currentFlag = computed(() => locale.value === 'en' ? '🇺🇸' : '🇪🇸')
+const currentFlag = computed(() => locale.value === 'en' ? '🇺🇸' : '🇲🇽')
 const currentLang = computed(() => locale.value === 'en' ? 'EN' : 'ES')
 
 const notificationCount = ref(4)
@@ -99,7 +99,7 @@ const languageDropdownOpen = ref(false)
                 class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800 transition"
                 :class="{ 'text-blue-400': locale === 'es' }"
               >
-                Español (ES) 🇪🇸
+                Español (ES) 🇲🇽
               </button>
             </div>
           </div>
