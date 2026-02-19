@@ -12,7 +12,13 @@ class User extends Authenticatable
     use HasApiTokens, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'avatar', 'birth_date', 'is_active',
+        'name',
+        'email',
+        'password',
+        'phone',
+        'avatar',
+        'birth_date',
+        'is_active',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -22,32 +28,21 @@ class User extends Authenticatable
         'password' => 'hashed',
         'is_active' => 'boolean',
     ];
-
     public function roles()
     {
         return $this->belongsToMany(Role::class);
     }
 
-    /**
-     * Verifica si el usuario tiene un rol específico
-     */
     public function hasRole(string $role): bool
     {
         return $this->roles()->where('name', $role)->exists();
     }
 
-    /**
-     * Verifica si el usuario tiene ALGUNO de los roles dados (necesario para middleware multi-rol)
-     *
-     * @param string|array $roles
-     * @return bool
-     */
     public function hasAnyRole($roles): bool
     {
         if (is_string($roles)) {
             $roles = [$roles];
         }
-
         return $this->roles()->whereIn('name', (array) $roles)->exists();
     }
 
@@ -66,9 +61,6 @@ class User extends Authenticatable
         return $this->hasRole('client');
     }
 
-    /**
-     * Opcional: helper para obtener el rol principal (el primero)
-     */
     public function primaryRole(): ?string
     {
         return $this->roles->first()?->name;

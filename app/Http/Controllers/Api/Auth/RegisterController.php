@@ -23,7 +23,7 @@ class RegisterController extends Controller
 
         // 🔐 Token
         $token = $user->createToken('auth_token')->plainTextToken;
-
+     event(new \App\Events\UserRegistered($user));
         return response()->json([
             'token' => $token,
             'role'  => $user->role,

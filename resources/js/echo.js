@@ -1,19 +1,33 @@
-// resources/js/echo.js
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
+import Echo from 'laravel-echo'
+import Pusher from 'pusher-js'
 
-// Asigna explícitamente a window (esto resuelve el "Pusher client not found")
-window.Pusher = Pusher;
+window.Pusher = Pusher
 
-window.Echo = new Echo({
+export function initEcho(token) {
+  if (window.Echo) return // evita doble inicialización
+
+  window.Echo = new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
+    wsPort: Number(import.meta.env.VITE_REVERB_PORT) || 8080,
+    wssPort: Number(import.meta.env.VITE_REVERB_PORT) || 8080,
+    forceTLS: false,
+    enabledTransports: ['ws'],
+    disableStats: true,
+    authEndpoint: '/api/broadcasting/auth',
+    auth: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    },
+  })
+}
 
-    // Opcional pero útil para debug
-    disableStats: false,
-});
+export function destroyEcho() {
+  if (window.Echo) {
+    window.Echo.disconnect()
+    window.Echo = null
+  }
+}

@@ -1,44 +1,39 @@
 // resources/js/app.js
+import './bootstrap'        // ✅ solo axios aquí
 
-// Importaciones base
-import './echo'          // Reverb + Echo
-import './bootstrap'     // Axios, helpers, etc. (si lo tienes)
-
-// Vue y plugins
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-
-// Componente raíz y router
 import App from './App.vue'
-import router from './router/index.js'   // Asegúrate de que esta ruta sea correcta
+import router from './router/index.js'
+import Toast from 'vue-toastification'
+import 'vue-toastification/dist/index.css'
+import { useAuthStore } from './stores/auth.js'
 
-// Crear Pinia
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
-// Crear la app
 const app = createApp(App)
 
-// Registrar plugins
 app.use(pinia)
 app.use(router)
+app.use(Toast, {
+  transition: 'Vue-Toastification__bounce',
+  maxToasts: 20,
+  newestOnTop: true,
+  position: 'top-right',
+  timeout: 8000,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  icon: true,
+})
 
-// Cargar autenticación inmediatamente después de usar Pinia
-import { useAuthStore } from './stores/auth.js'   // ← ruta relativa correcta desde app.js
+// ✅ initAuth() llama a initEcho(token) internamente si hay token guardado
 const authStore = useAuthStore()
-authStore.initAuth()   // Carga token y user desde localStorage
+authStore.initAuth()
 
-// Escucha global de Echo (opcional - puedes moverla a un composable más adelante)
-window.Echo.channel('test-channel')
-    .listen('test.notification', (event) => {
-        console.log('Evento global recibido:', event)
-        // Opcional: usar el store para mostrar notificaciones
-        // authStore.addNotification?.(event.message)
-    })
-    .error((error) => {
-        console.error('Error en canal test-channel:', error)
-    })
+// ✅ NO uses window.Echo aquí — puede no existir si el usuario no está logueado
+// El canal admin se suscribe en App.vue cuando isAdmin === true
 
-// Montar la aplicación
 app.mount('#app')

@@ -1,6 +1,7 @@
 // resources/js/stores/auth.js
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { initEcho, destroyEcho } from '@/echo'  // ✅ importamos las funciones
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -15,6 +16,9 @@ export const useAuthStore = defineStore('auth', {
     userName: (state) => state.user?.name || 'Invitado',
     userEmail: (state) => state.user?.email || '',
     userRoles: (state) => state.user?.roles || [],
+    isAdmin: (state) => state.user?.roles?.some(role => role.name === 'admin') ?? false,
+    isBarber: (state) => state.user?.role === 'barber',
+    isClient: (state) => state.user?.role === 'client',
   },
 
   actions: {
@@ -25,6 +29,7 @@ export const useAuthStore = defineStore('auth', {
       if (token) {
         this.token = token
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        initEcho(token)  // ✅ restaurar Echo al recargar la página
       }
 
       if (userStr) {
@@ -42,8 +47,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
 
       try {
-        const response = await axios.post('/register', userData)  // ← CORREGIDO (sin /api)
-
+        const response = await axios.post('/register', userData)
         const { token, user } = response.data
 
         this.token = token
@@ -53,11 +57,11 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('user', JSON.stringify(user))
 
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        // ✅ No inicializamos Echo aquí porque el que se registra no es admin
 
         return response.data
       } catch (error) {
         this.error = error.response?.data?.message || 'Error al registrar usuario'
-        console.error('Error en register:', error)
         throw error.response?.data || error.message
       } finally {
         this.isLoading = false
@@ -69,8 +73,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
 
       try {
-        const response = await axios.post('/login', credentials)  // ← CORREGIDO (sin /api)
-
+        const response = await axios.post('/login', credentials)
         const { token, user } = response.data
 
         this.token = token
@@ -80,11 +83,11 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('user', JSON.stringify(user))
 
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        initEcho(token)  // ✅ inicializar Echo con el token listo
 
         return response.data
       } catch (error) {
         this.error = error.response?.data?.message || 'Credenciales inválidas o error en el servidor'
-        console.error('Error en login:', error)
         throw error.response?.data || error.message
       } finally {
         this.isLoading = false
@@ -92,6 +95,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
+      destroyEcho()  // ✅ desconectar WebSocket limpiamente
+
       this.token = null
       this.user = null
       this.error = null
@@ -104,7 +109,7 @@ export const useAuthStore = defineStore('auth', {
 
     async updateUser() {
       try {
-        const response = await axios.get('/profile')  // ← sin /api (baseURL lo agrega)
+        const response = await axios.get('/profile')
         this.user = response.data.user
         localStorage.setItem('user', JSON.stringify(this.user))
       } catch (err) {

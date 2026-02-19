@@ -4,6 +4,14 @@ use App\Http\Controllers\Api\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Admin\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
+
+// ✅ Ruta de autenticación de canales privados de Reverb
+Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+})->middleware('auth:sanctum');
+
 
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);

@@ -10,3 +10,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('test-channel', function () {
     return true;  // Cualquiera puede escuchar este canal público
 });
+
+Broadcast::channel('admin.notifications', function ($user) {
+    return $user->isAdmin();  // ✅ usa la relación
+});
