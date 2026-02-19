@@ -1,0 +1,48 @@
+export default {
+  nav: {
+    search: 'Search...',
+    profile: 'My Profile',
+    settings: 'Settings',
+    logout: 'Log Out',
+  },
+  auth: {
+    login: 'Log In',
+    register: 'Register',
+    email: 'Email',
+    password: 'Password',
+    confirm_password: 'Confirm Password',
+    name: 'Name',
+    phone: 'Phone',
+  },
+  dashboard: {
+    title: 'Admin Dashboard',
+    total_users: 'Total Users',
+    appointments_today: 'Appointments Today',
+    monthly_revenue: 'Monthly Revenue',
+    welcome: 'Welcome, {name}. You have full control of the system.',
+    new_registrations: '🔔 New Registrations',
+  },
+  users: {
+    title: 'User Management',
+    create: 'Create New User',
+    edit: 'Edit User',
+    list: 'User List',
+    avatar: 'Avatar',
+    role: 'Role',
+    actions: 'Actions',
+    edit_btn: 'Edit',
+    delete_btn: 'Delete',
+    save: 'Save',
+    update: 'Update User',
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    roles: {
+      admin: 'Admin',
+      barber: 'Barber',
+      client: 'Client',
+    }
+  },
+  notifications: {
+    new_user: '🧑 New user: {name} ({email})',
+  }
+}

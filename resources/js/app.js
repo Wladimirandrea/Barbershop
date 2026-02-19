@@ -9,6 +9,7 @@ import router from './router/index.js'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import { useAuthStore } from './stores/auth.js'
+import { i18n } from './i18n/index.js'
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
@@ -35,5 +36,5 @@ authStore.initAuth()
 
 // ✅ NO uses window.Echo aquí — puede no existir si el usuario no está logueado
 // El canal admin se suscribe en App.vue cuando isAdmin === true
-
+app.use(i18n) 
 app.mount('#app')

@@ -1,16 +1,29 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const auth = useAuthStore()
 const router = useRouter()
+const { t, locale } = useI18n()
+
 const handleLogout = () => {
   auth.logout()
-  router.push('/')  // ✅ redirige a HomeView
+  router.push('/')
 }
-const notificationCount = ref(4)              // notificaciones generales
-const newUserNotifications = ref(3)           // contador de nuevos usuarios (tu badge rojo para 👤)
+
+const changeLanguage = (lang) => {
+  locale.value = lang
+  localStorage.setItem('locale', lang)
+  languageDropdownOpen.value = false
+}
+
+const currentFlag = computed(() => locale.value === 'en' ? '🇺🇸' : '🇪🇸')
+const currentLang = computed(() => locale.value === 'en' ? 'EN' : 'ES')
+
+const notificationCount = ref(4)
+const newUserNotifications = ref(3)
 const profileDropdownOpen = ref(false)
 const languageDropdownOpen = ref(false)
 </script>
@@ -32,7 +45,7 @@ const languageDropdownOpen = ref(false)
           <div class="relative w-full">
             <input
               type="text"
-              placeholder="Search..."
+              :placeholder="t('nav.search')"
               class="w-full h-9 pl-10 pr-4 text-sm bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 transition"
             >
             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
@@ -51,7 +64,7 @@ const languageDropdownOpen = ref(false)
             </span>
           </button>
 
-          <!-- Nuevos usuarios / registros pendientes (tu icono 👤 con badge rojo) -->
+          <!-- Nuevos usuarios -->
           <button class="relative p-2 text-gray-400 hover:text-gray-200 focus:outline-none transition">
             <span class="text-xl">👤</span>
             <span v-if="newUserNotifications > 0" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-600 rounded-full px-1.5">
@@ -59,41 +72,48 @@ const languageDropdownOpen = ref(false)
             </span>
           </button>
 
-          <!-- Idioma -->
+          <!-- Selector de idioma ✅ -->
           <div class="relative">
-            <button 
+            <button
               @click="languageDropdownOpen = !languageDropdownOpen"
               class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-800 transition"
             >
-              <span class="text-xl">🇺🇸</span>
-              <span class="text-sm text-gray-300">EN</span>
+              <span class="text-xl">{{ currentFlag }}</span>
+              <span class="text-sm text-gray-300">{{ currentLang }}</span>
               <span class="text-gray-500 text-xs">▼</span>
             </button>
 
-            <div 
+            <div
               v-if="languageDropdownOpen"
-              @click.outside="languageDropdownOpen = false"
               class="absolute right-0 mt-2 w-40 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl py-2 z-50 text-sm"
             >
-              <button class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800 transition">
+              <button
+                @click="changeLanguage('en')"
+                class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800 transition"
+                :class="{ 'text-blue-400': locale === 'en' }"
+              >
                 English (EN) 🇺🇸
               </button>
-              <button class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800 transition">
+              <button
+                @click="changeLanguage('es')"
+                class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800 transition"
+                :class="{ 'text-blue-400': locale === 'es' }"
+              >
                 Español (ES) 🇪🇸
               </button>
             </div>
           </div>
 
-          <!-- Avatar real del usuario logueado -->
+          <!-- Avatar del usuario -->
           <div class="relative">
-            <button 
+            <button
               @click="profileDropdownOpen = !profileDropdownOpen"
               class="flex items-center gap-3 focus:outline-none group"
             >
               <div class="relative">
-                <img 
-                  :src="auth.user?.avatar ? `/storage/${auth.user.avatar}` : '/storage/avatars/default.png'" 
-                  alt="Avatar del usuario" 
+                <img
+                  :src="auth.user?.avatar ? `/storage/${auth.user.avatar}` : '/storage/avatars/default.png'"
+                  alt="Avatar"
                   class="w-8 h-8 rounded-full object-cover border border-gray-600 shadow-sm"
                 >
                 <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-gray-950 shadow"></span>
@@ -112,9 +132,8 @@ const languageDropdownOpen = ref(false)
             </button>
 
             <!-- Dropdown de perfil -->
-            <div 
+            <div
               v-if="profileDropdownOpen"
-              @click.outside="profileDropdownOpen = false"
               class="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl py-1.5 z-50 text-sm"
             >
               <div class="px-4 py-2 border-b border-gray-800">
@@ -122,27 +141,27 @@ const languageDropdownOpen = ref(false)
                 <p class="text-xs text-gray-500">{{ auth.userEmail }}</p>
               </div>
 
-              <router-link 
+              <router-link
                 to="/profile"
                 class="block px-4 py-2 text-gray-300 hover:bg-gray-800 hover:text-white transition"
               >
-                Mi Perfil
+                {{ t('nav.profile') }}
               </router-link>
 
-              <router-link 
+              <router-link
                 to="/settings"
                 class="block px-4 py-2 text-gray-300 hover:bg-gray-800 hover:text-white transition"
               >
-                Configuración
+                {{ t('nav.settings') }}
               </router-link>
 
               <hr class="my-1 border-gray-800" />
 
-              <button 
+              <button
                 @click="handleLogout()"
                 class="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-800 hover:text-red-300 transition"
               >
-                Cerrar Sesión
+                {{ t('nav.logout') }}
               </button>
             </div>
           </div>
