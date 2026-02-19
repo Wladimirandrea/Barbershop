@@ -1,8 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
+const router = useRouter()
+const handleLogout = () => {
+  auth.logout()
+  router.push('/')  // ✅ redirige a HomeView
+}
 const notificationCount = ref(4)              // notificaciones generales
 const newUserNotifications = ref(3)           // contador de nuevos usuarios (tu badge rojo para 👤)
 const profileDropdownOpen = ref(false)
@@ -133,7 +139,7 @@ const languageDropdownOpen = ref(false)
               <hr class="my-1 border-gray-800" />
 
               <button 
-                @click="auth.logout()"
+                @click="handleLogout()"
                 class="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-800 hover:text-red-300 transition"
               >
                 Cerrar Sesión
