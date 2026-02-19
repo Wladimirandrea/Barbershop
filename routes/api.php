@@ -20,8 +20,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(
     // Ver un usuario específico
     Route::get('/{user}', [UserController::class, 'show']);
 
-    // Actualizar usuario
-    Route::put('/{user}', [UserController::class, 'update']);
+   Route::put('/{user}', [UserController::class, 'update']);
+    Route::post('/{user}', [UserController::class, 'update']);
 
     // Eliminar usuario
     Route::delete('/{user}', [UserController::class, 'destroy']);
