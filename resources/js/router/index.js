@@ -42,7 +42,30 @@ const routes = [
     component: () => import('@/views/admin/UsersCrud.vue'),
     meta: { requiresAuth: true, roles: ['admin'] }
   },
-
+  {
+    path: '/admin/appointments',
+    name: 'admin-appointments',
+    component: () => import('@/views/admin/AppointmentsAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/barbers',
+    name: 'admin-barbers',
+    component: () => import('@/views/admin/BarbersAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/reports',
+    name: 'admin-reports',
+    component: () => import('@/views/admin/ReportsAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/settings',
+    name: 'admin-settings',
+    component: () => import('@/views/admin/SettingsAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
 
 
 

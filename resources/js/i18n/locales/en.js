@@ -4,6 +4,9 @@ export default {
     profile: 'My Profile',
     settings: 'Settings',
     logout: 'Log Out',
+    appointments: 'Appointments',
+    barbers: 'Barbers',
+    reports: 'Reports',
   },
   auth: {
     login: 'Log In',
@@ -21,6 +24,14 @@ export default {
     monthly_revenue: 'Monthly Revenue',
     welcome: 'Welcome, {name}. You have full control of the system.',
     new_registrations: '🔔 New Registrations',
+  },
+  sidebar: {
+    dashboard: 'Dashboard',
+    users: 'Users',
+    appointments: 'Appointments',
+    barbers: 'Barbers',
+    reports: 'Reports',
+    settings: 'Settings',
   },
   users: {
     title: 'User Management',

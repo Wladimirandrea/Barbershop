@@ -4,6 +4,9 @@ export default {
     profile: 'Mi Perfil',
     settings: 'Configuración',
     logout: 'Cerrar Sesión',
+    appointments: 'Turnos / Citas',
+    barbers: 'Barberos',
+    reports: 'Reportes',
   },
   auth: {
     login: 'Iniciar Sesión',
@@ -21,6 +24,14 @@ export default {
     monthly_revenue: 'Ingresos Mensuales',
     welcome: 'Bienvenido, {name}. Tienes control total del sistema.',
     new_registrations: '🔔 Nuevos registros',
+  },
+  sidebar: {
+    dashboard: 'Dashboard',
+    users: 'Usuarios',
+    appointments: 'Turnos / Citas',
+    barbers: 'Barberos',
+    reports: 'Reportes',
+    settings: 'Configuración',
   },
   users: {
     title: 'Gestión de Usuarios',

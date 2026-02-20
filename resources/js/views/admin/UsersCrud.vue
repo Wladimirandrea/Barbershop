@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 
@@ -20,6 +20,22 @@ const editId = ref(null)
 const loading = ref(false)
 const error = ref('')
 
+// ─── PAGINACIÓN ───────────────────────────────────────────
+const currentPage = ref(1)
+const perPage = ref(8)
+
+const totalPages = computed(() => Math.ceil(users.value.length / perPage.value))
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return users.value.slice(start, start + perPage.value)
+})
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) currentPage.value = page
+}
+
+// ─── USUARIOS ────────────────────────────────────────────
 const fetchUsers = async () => {
   try {
     const res = await axios.get('/admin/users')
@@ -63,17 +79,13 @@ const saveUser = async () => {
   try {
     if (editId.value) {
       await axios.post(`/admin/users/${editId.value}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'X-HTTP-Method-Override': 'PUT'
-        }
+        headers: { 'Content-Type': 'multipart/form-data', 'X-HTTP-Method-Override': 'PUT' }
       })
     } else {
       await axios.post('/admin/users', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
     }
-
     resetForm()
     fetchUsers()
   } catch (err) {
@@ -86,14 +98,8 @@ const saveUser = async () => {
 const resetForm = () => {
   editId.value = null
   form.value = {
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    phone: '',
-    role: 'client',
-    avatar: null,
-    avatarPreview: null
+    name: '', email: '', password: '', password_confirmation: '',
+    phone: '', role: 'client', avatar: null, avatarPreview: null
   }
 }
 
@@ -121,55 +127,61 @@ const deleteUser = async (id) => {
   }
 }
 
-onMounted(() => {
-  fetchUsers()
-})
+onMounted(() => fetchUsers())
 </script>
 
 <template>
-  <div class="p-6 max-w-[1400px] mx-auto">
-    <h1 class="text-3xl font-bold mb-8 text-gray-800">{{ t('users.title') }}</h1>
+  <div class="p-4 md:p-6 max-w-[1400px] mx-auto h-full flex flex-col">
+    <h1 class="text-2xl md:text-3xl font-bold mb-6 text-gray-800">{{ t('users.title') }}</h1>
 
-    <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+    <div v-if="error" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
       {{ error }}
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-8">
-      <!-- Lista de usuarios -->
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 order-2 lg:order-1">
-        <div class="p-6 border-b border-gray-200">
-          <h2 class="text-xl font-semibold text-gray-800">{{ t('users.list') }}</h2>
+    <div class="flex flex-col xl:flex-row gap-6 flex-1 min-h-0">
+
+      <!-- ─── LISTA DE USUARIOS ─────────────────────────────── -->
+      <div class="flex-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 flex flex-col min-h-0">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">{{ t('users.list') }}</h2>
+          <span class="text-sm text-gray-400">{{ users.length }} usuarios</span>
         </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+
+        <!-- Tabla responsive -->
+        <div class="overflow-x-auto flex-1 min-h-0">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('users.avatar') }}</th>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('auth.name') }}</th>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('auth.email') }}</th>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('auth.phone') }}</th>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('users.role') }}</th>
-                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('users.actions') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('users.avatar') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('auth.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">{{ t('auth.email') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">{{ t('auth.phone') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('users.role') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('users.actions') }}</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <img :src="user.avatar ? `/storage/${user.avatar}` : '/storage/avatars/default.png'"
+              <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3">
+                  <img
+                    :src="user.avatar ? `/storage/${user.avatar}` : '/storage/avatars/default.png'"
                     :alt="user.name"
-                    class="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm">
+                    class="w-10 h-10 rounded-full object-cover border border-gray-200"
+                  >
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.phone || '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span v-for="role in user.roles" :key="role.id"
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ user.name }}</td>
+                <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ user.email }}</td>
+                <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">{{ user.phone || '-' }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    v-for="role in user.roles" :key="role.id"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1"
+                  >
                     {{ t(`users.roles.${role.name}`) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button @click="editUser(user)" class="text-indigo-600 hover:text-indigo-900 mr-4 transition-colors">
+                <td class="px-4 py-3">
+                  <button @click="editUser(user)" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors">
                     {{ t('users.edit_btn') }}
                   </button>
                   <button @click="deleteUser(user.id)" class="text-red-600 hover:text-red-900 transition-colors">
@@ -177,89 +189,136 @@ onMounted(() => {
                   </button>
                 </td>
               </tr>
+
+              <!-- Sin usuarios -->
+              <tr v-if="paginatedUsers.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                  No hay usuarios registrados
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- ─── PAGINACIÓN ──────────────────────────────────── -->
+        <div v-if="totalPages > 1" class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-500">
+            Página {{ currentPage }} de {{ totalPages }}
+          </span>
+          <div class="flex items-center gap-1">
+            <button
+              @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              ←
+            </button>
+
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="goToPage(page)"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm border transition',
+                currentPage === page
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'border-gray-300 hover:bg-gray-50'
+              ]"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              @click="goToPage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              →
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Formulario -->
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 order-1 lg:order-2">
-        <div class="p-6 border-b border-gray-200">
-          <h2 class="text-xl font-semibold text-gray-800">
+      <!-- ─── FORMULARIO ────────────────────────────────────── -->
+      <div class="w-full xl:w-[380px] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 shrink-0 flex flex-col min-h-0">
+        <div class="p-0 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-800">
             {{ editId ? t('users.edit') : t('users.create') }}
           </h2>
         </div>
-        <div class="p-6">
-          <form @submit.prevent="saveUser" class="space-y-6">
-            <div class="grid grid-cols-1 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.name') }}</label>
-                <input v-model="form.name" type="text" required
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
+        <div class="p-4 overflow-y-auto flex-1">
+          <form @submit.prevent="saveUser" class="space-y-4">
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.email') }}</label>
-                <input v-model="form.email" type="email" required
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.name') }}</label>
+              <input v-model="form.name" type="text" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  {{ t('auth.password') }} {{ editId ? t('users.password_hint') : '' }}
-                </label>
-                <input v-model="form.password" type="password" :required="!editId"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.email') }}</label>
+              <input v-model="form.email" type="email" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.confirm_password') }}</label>
-                <input v-model="form.password_confirmation" type="password" :required="!editId"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                {{ t('auth.password') }} <span v-if="editId" class="text-gray-400 font-normal">{{ t('users.password_hint') }}</span>
+              </label>
+              <input v-model="form.password" type="password" :required="!editId"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.phone') }}</label>
-                <input v-model="form.phone" type="text"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.confirm_password') }}</label>
+              <input v-model="form.password_confirmation" type="password" :required="!editId"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.role') }}</label>
-                <select v-model="form.role" required
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="admin">{{ t('users.roles.admin') }}</option>
-                  <option value="barber">{{ t('users.roles.barber') }}</option>
-                  <option value="client">{{ t('users.roles.client') }}</option>
-                </select>
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.phone') }}</label>
+              <input v-model="form.phone" type="text"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.avatar') }}</label>
-                <input type="file" accept="image/*" @change="handleAvatarChange"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                <div class="mt-4 flex justify-center">
-                  <img v-if="form.avatarPreview" :src="form.avatarPreview" alt="Preview"
-                    class="w-40 h-40 object-cover rounded-full border-4 border-gray-200 shadow-lg">
-                  <img v-else src="/storage/avatars/default.png" alt="Default"
-                    class="w-40 h-40 object-cover rounded-full border-4 border-gray-200 shadow-lg">
-                </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.role') }}</label>
+              <select v-model="form.role" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <option value="admin">{{ t('users.roles.admin') }}</option>
+                <option value="barber">{{ t('users.roles.barber') }}</option>
+                <option value="client">{{ t('users.roles.client') }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.avatar') }}</label>
+              <input type="file" accept="image/*" @change="handleAvatarChange"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <div class="mt-3 flex justify-center">
+                <img
+                  :src="form.avatarPreview || '/storage/avatars/default.png'"
+                  alt="Preview"
+                  class="w-24 h-24 object-cover rounded-full border-4 border-gray-200 shadow"
+                >
               </div>
             </div>
 
-            <div class="flex justify-end gap-4 pt-6 border-t">
+            <div class="flex justify-end gap-3 pt-4 border-t">
               <button v-if="editId" type="button" @click="resetForm"
-                class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
                 {{ t('users.cancel') }}
               </button>
               <button type="submit" :disabled="loading"
-                class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm">
                 {{ loading ? t('users.saving') : editId ? t('users.update') : t('users.save') }}
               </button>
             </div>
+
           </form>
         </div>
       </div>
+
     </div>
   </div>
 </template>
