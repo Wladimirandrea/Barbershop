@@ -6,6 +6,7 @@ import { Howl, Howler } from 'howler'
 import Navbar from '@/components/Navbar.vue'
 import AdminSidebar from '@/components/AdminSidebar.vue'
 import { useNotificationsStore } from '@/stores/notifications'
+import BottomNav from '@/components/BottomNav.vue'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -104,11 +105,13 @@ onUnmounted(() => {
     <Navbar v-if="auth.isAuthenticated" />
 
     <div class="flex flex-1">
-      <AdminSidebar v-if="auth.isAdmin" />
+      <AdminSidebar v-if="auth.isAdmin" class="hidden lg:flex" />  <!-- ✅ esta línea -->
 
       <main class="flex-grow flex flex-col min-h-0">
         <router-view />
       </main>
     </div>
+
+    <BottomNav v-if="auth.isAdmin" />
   </div>
 </template>

@@ -10,6 +10,7 @@ import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import { useAuthStore } from './stores/auth.js'
 import { i18n } from './i18n/index.js'
+import 'animate.css'
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)

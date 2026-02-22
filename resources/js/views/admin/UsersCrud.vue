@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 
@@ -19,18 +19,20 @@ const form = ref({
 const editId = ref(null)
 const loading = ref(false)
 const error = ref('')
+const showForm = ref(false)
+
+// ─── MOBILE/TABLET DETECTION (< 1280 = modal, >= 1280 = sidebar) ──
+const isMobile = ref(window.innerWidth < 1280)
+const handleResize = () => { isMobile.value = window.innerWidth < 1280 }
 
 // ─── PAGINACIÓN ───────────────────────────────────────────
 const currentPage = ref(1)
 const perPage = ref(8)
-
 const totalPages = computed(() => Math.ceil(users.value.length / perPage.value))
-
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
   return users.value.slice(start, start + perPage.value)
 })
-
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) currentPage.value = page
 }
@@ -50,9 +52,7 @@ const handleAvatarChange = (e) => {
   if (file) {
     form.value.avatar = file
     const reader = new FileReader()
-    reader.onload = (event) => {
-      form.value.avatarPreview = event.target.result
-    }
+    reader.onload = (event) => { form.value.avatarPreview = event.target.result }
     reader.readAsDataURL(file)
   }
 }
@@ -97,6 +97,16 @@ const saveUser = async () => {
 
 const resetForm = () => {
   editId.value = null
+  showForm.value = false
+  form.value = {
+    name: '', email: '', password: '', password_confirmation: '',
+    phone: '', role: 'client', avatar: null, avatarPreview: null
+  }
+}
+
+const openCreateForm = () => {
+  editId.value = null
+  showForm.value = true
   form.value = {
     name: '', email: '', password: '', password_confirmation: '',
     phone: '', role: 'client', avatar: null, avatarPreview: null
@@ -104,6 +114,7 @@ const resetForm = () => {
 }
 
 const editUser = (user) => {
+  showForm.value = true
   editId.value = user.id
   form.value = {
     name: user.name,
@@ -127,7 +138,14 @@ const deleteUser = async (id) => {
   }
 }
 
-onMounted(() => fetchUsers())
+onMounted(() => {
+  fetchUsers()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <template>
@@ -144,10 +162,17 @@ onMounted(() => fetchUsers())
       <div class="flex-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 flex flex-col min-h-0">
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-gray-800">{{ t('users.list') }}</h2>
-          <span class="text-sm text-gray-400">{{ users.length }} usuarios</span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-400">{{ users.length }} usuarios</span>
+            <button
+              @click="openCreateForm"
+              class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              + {{ t('users.create') }}
+            </button>
+          </div>
         </div>
 
-        <!-- Tabla responsive -->
         <div class="overflow-x-auto flex-1 min-h-0">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -189,8 +214,6 @@ onMounted(() => fetchUsers())
                   </button>
                 </td>
               </tr>
-
-              <!-- Sin usuarios -->
               <tr v-if="paginatedUsers.length === 0">
                 <td colspan="6" class="px-4 py-8 text-center text-gray-400">
                   No hay usuarios registrados
@@ -202,123 +225,159 @@ onMounted(() => fetchUsers())
 
         <!-- ─── PAGINACIÓN ──────────────────────────────────── -->
         <div v-if="totalPages > 1" class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-          <span class="text-sm text-gray-500">
-            Página {{ currentPage }} de {{ totalPages }}
-          </span>
+          <span class="text-sm text-gray-500">Página {{ currentPage }} de {{ totalPages }}</span>
           <div class="flex items-center gap-1">
             <button
               @click="goToPage(currentPage - 1)"
               :disabled="currentPage === 1"
               class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              ←
-            </button>
-
+            >←</button>
             <button
-              v-for="page in totalPages"
-              :key="page"
+              v-for="page in totalPages" :key="page"
               @click="goToPage(page)"
-              :class="[
-                'px-3 py-1.5 rounded-lg text-sm border transition',
-                currentPage === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'border-gray-300 hover:bg-gray-50'
-              ]"
-            >
-              {{ page }}
-            </button>
-
+              :class="['px-3 py-1.5 rounded-lg text-sm border transition', currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-50']"
+            >{{ page }}</button>
             <button
               @click="goToPage(currentPage + 1)"
               :disabled="currentPage === totalPages"
               class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              →
-            </button>
+            >→</button>
           </div>
         </div>
       </div>
 
-      <!-- ─── FORMULARIO ────────────────────────────────────── -->
-      <div class="w-full xl:w-[380px] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 shrink-0 flex flex-col min-h-0">
-        <div class="p-0 border-b border-gray-200">
+      <!-- ─── FORMULARIO DESKTOP (>= 1280px) ───────────────── -->
+      <div
+        v-if="showForm && !isMobile"
+        class="animate__animated animate__slideInRight w-full xl:w-[380px] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 shrink-0 flex flex-col min-h-0"
+      >
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-gray-800">
             {{ editId ? t('users.edit') : t('users.create') }}
           </h2>
+          <button @click="resetForm" class="text-gray-400 hover:text-gray-600 transition text-xl leading-none">✕</button>
         </div>
         <div class="p-4 overflow-y-auto flex-1">
           <form @submit.prevent="saveUser" class="space-y-4">
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.name') }}</label>
-              <input v-model="form.name" type="text" required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <input v-model="form.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.email') }}</label>
-              <input v-model="form.email" type="email" required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <input v-model="form.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                {{ t('auth.password') }} <span v-if="editId" class="text-gray-400 font-normal">{{ t('users.password_hint') }}</span>
+                {{ t('auth.password') }}
+                <span v-if="editId" class="text-gray-400 font-normal">{{ t('users.password_hint') }}</span>
               </label>
-              <input v-model="form.password" type="password" :required="!editId"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <input v-model="form.password" type="password" :required="!editId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.confirm_password') }}</label>
-              <input v-model="form.password_confirmation" type="password" :required="!editId"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <input v-model="form.password_confirmation" type="password" :required="!editId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.phone') }}</label>
-              <input v-model="form.phone" type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <input v-model="form.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.role') }}</label>
-              <select v-model="form.role" required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+              <select v-model="form.role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 <option value="admin">{{ t('users.roles.admin') }}</option>
                 <option value="barber">{{ t('users.roles.barber') }}</option>
                 <option value="client">{{ t('users.roles.client') }}</option>
               </select>
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.avatar') }}</label>
-              <input type="file" accept="image/*" @change="handleAvatarChange"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <input type="file" accept="image/*" @change="handleAvatarChange" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
               <div class="mt-3 flex justify-center">
-                <img
-                  :src="form.avatarPreview || '/storage/avatars/default.png'"
-                  alt="Preview"
-                  class="w-24 h-24 object-cover rounded-full border-4 border-gray-200 shadow"
-                >
+                <img :src="form.avatarPreview || '/storage/avatars/default.png'" alt="Preview" class="w-24 h-24 object-cover rounded-full border-4 border-gray-200 shadow">
               </div>
             </div>
-
             <div class="flex justify-end gap-3 pt-4 border-t">
-              <button v-if="editId" type="button" @click="resetForm"
-                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+              <button type="button" @click="resetForm" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
                 {{ t('users.cancel') }}
               </button>
-              <button type="submit" :disabled="loading"
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm">
+              <button type="submit" :disabled="loading" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm">
                 {{ loading ? t('users.saving') : editId ? t('users.update') : t('users.save') }}
               </button>
             </div>
-
           </form>
         </div>
       </div>
 
     </div>
   </div>
+
+  <!-- ─── MODAL MOBILE + TABLET (< 1280px) ─────────────────── -->
+  <Teleport to="body">
+    <div v-if="showForm && isMobile" class="fixed inset-0 z-50 flex items-end justify-center">
+
+      <!-- Overlay -->
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="resetForm"></div>
+
+      <!-- Sheet desde abajo -->
+      <div class="animate__animated animate__slideInUp relative w-full max-w-2xl bg-white rounded-t-2xl shadow-2xl z-10 max-h-[90vh] flex flex-col">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">
+            {{ editId ? t('users.edit') : t('users.create') }}
+          </h2>
+          <button @click="resetForm" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1">
+          <form @submit.prevent="saveUser" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.name') }}</label>
+              <input v-model="form.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.email') }}</label>
+              <input v-model="form.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                {{ t('auth.password') }}
+                <span v-if="editId" class="text-gray-400 font-normal">{{ t('users.password_hint') }}</span>
+              </label>
+              <input v-model="form.password" type="password" :required="!editId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.confirm_password') }}</label>
+              <input v-model="form.password_confirmation" type="password" :required="!editId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.phone') }}</label>
+              <input v-model="form.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.role') }}</label>
+              <select v-model="form.role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <option value="admin">{{ t('users.roles.admin') }}</option>
+                <option value="barber">{{ t('users.roles.barber') }}</option>
+                <option value="client">{{ t('users.roles.client') }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('users.avatar') }}</label>
+              <input type="file" accept="image/*" @change="handleAvatarChange" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <div class="mt-3 flex justify-center">
+                <img :src="form.avatarPreview || '/storage/avatars/default.png'" alt="Preview" class="w-24 h-24 object-cover rounded-full border-4 border-gray-200 shadow">
+              </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t mb-4">
+              <button type="button" @click="resetForm" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+                {{ t('users.cancel') }}
+              </button>
+              <button type="submit" :disabled="loading" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm">
+                {{ loading ? t('users.saving') : editId ? t('users.update') : t('users.save') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
