@@ -57,6 +57,7 @@ export default {
     error_load: 'Error al cargar usuarios',
     error_save: 'Error al guardar',
     error_delete: 'Error al eliminar',
+    all: 'Todos',
   },
   notifications: {
     new_user: '🧑 Nuevo usuario: {name} ({email})',

@@ -21,18 +21,34 @@ const loading = ref(false)
 const error = ref('')
 const showForm = ref(false)
 
-// ─── MOBILE/TABLET DETECTION (< 1280 = modal, >= 1280 = sidebar) ──
+// ─── MOBILE/TABLET DETECTION ──────────────────────────────
 const isMobile = ref(window.innerWidth < 1280)
 const handleResize = () => { isMobile.value = window.innerWidth < 1280 }
+
+// ─── FILTROS DE ROL ───────────────────────────────────────
+const activeFilter = ref('all')
+
+const filteredUsers = computed(() => {
+  if (activeFilter.value === 'all') return users.value
+  return users.value.filter(u => u.roles.some(r => r.name === activeFilter.value))
+})
+
+const setFilter = (filter) => {
+  activeFilter.value = filter
+  currentPage.value = 1
+}
 
 // ─── PAGINACIÓN ───────────────────────────────────────────
 const currentPage = ref(1)
 const perPage = ref(8)
-const totalPages = computed(() => Math.ceil(users.value.length / perPage.value))
+
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / perPage.value))
+
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
-  return users.value.slice(start, start + perPage.value)
+  return filteredUsers.value.slice(start, start + perPage.value)
 })
+
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) currentPage.value = page
 }
@@ -160,10 +176,12 @@ onUnmounted(() => {
 
       <!-- ─── LISTA DE USUARIOS ─────────────────────────────── -->
       <div class="flex-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 flex flex-col min-h-0">
+
+        <!-- Header -->
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-gray-800">{{ t('users.list') }}</h2>
           <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-400">{{ users.length }} usuarios</span>
+            <span class="text-sm text-gray-400">{{ filteredUsers.length }} usuarios</span>
             <button
               @click="openCreateForm"
               class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium"
@@ -173,6 +191,35 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- ─── FILTROS DE ROL ─────────────────────────────── -->
+        <div class="px-4 py-3 border-b border-gray-100 flex gap-2 flex-wrap">
+          <button
+            @click="setFilter('all')"
+            :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition border', activeFilter === 'all' ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50']"
+          >
+            {{ t('users.all') }}
+          </button>
+          <button
+            @click="setFilter('admin')"
+            :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition border', activeFilter === 'admin' ? 'bg-red-600 text-white border-red-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50']"
+          >
+            {{ t('users.roles.admin') }}
+          </button>
+          <button
+            @click="setFilter('barber')"
+            :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition border', activeFilter === 'barber' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50']"
+          >
+            {{ t('users.roles.barber') }}
+          </button>
+          <button
+            @click="setFilter('client')"
+            :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition border', activeFilter === 'client' ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50']"
+          >
+            {{ t('users.roles.client') }}
+          </button>
+        </div>
+
+        <!-- Tabla -->
         <div class="overflow-x-auto flex-1 min-h-0">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -200,7 +247,12 @@ onUnmounted(() => {
                 <td class="px-4 py-3">
                   <span
                     v-for="role in user.roles" :key="role.id"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1"
+                    :class="[
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-1',
+                      role.name === 'admin'  ? 'bg-red-100 text-red-800'   :
+                      role.name === 'barber' ? 'bg-blue-100 text-blue-800' :
+                                               'bg-green-100 text-green-800'
+                    ]"
                   >
                     {{ t(`users.roles.${role.name}`) }}
                   </span>
@@ -315,11 +367,7 @@ onUnmounted(() => {
   <!-- ─── MODAL MOBILE + TABLET (< 1280px) ─────────────────── -->
   <Teleport to="body">
     <div v-if="showForm && isMobile" class="fixed inset-0 z-50 flex items-end justify-center">
-
-      <!-- Overlay -->
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="resetForm"></div>
-
-      <!-- Sheet desde abajo -->
       <div class="animate__animated animate__slideInUp relative w-full max-w-2xl bg-white rounded-t-2xl shadow-2xl z-10 max-h-[90vh] flex flex-col">
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-gray-800">
